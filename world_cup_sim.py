@@ -1,6 +1,6 @@
 
 import random, math
-from standings import teams
+from standings import init
 from constants import *
 from matches import matches
 
@@ -19,7 +19,7 @@ def get_outcome_probabilities(a_elo, b_elo):
     pr_a_loss = 1 - pr_draw - pr_a_win
     return pr_a_loss, pr_draw
 
-def get_victor_goals(team, goal_indicator):
+def get_victor_goals(team, goal_indicator, teams):
     mu = teams[team][ATT]
     one_g = poisson_mass(mu, 1)
     two_g = poisson_mass(mu, 2)
@@ -30,7 +30,7 @@ def get_victor_goals(team, goal_indicator):
     else:
         return 3
 
-def get_loser_goals(team, goals_conceded, goal_indicator):
+def get_loser_goals(team, goals_conceded, goal_indicator, teams):
     if goals_conceded == 1:
         return 0
     if goals_conceded == 2:
@@ -51,15 +51,15 @@ def get_loser_goals(team, goals_conceded, goal_indicator):
         else:
             return 2
 
-def get_match_score(team_a, team_b, outcome):
+def get_match_score(team_a, team_b, outcome, teams):
 
     winner_goals_indicator = get_random_float_between(0, 1)
     loser_goals_indicator = get_random_float_between(0, 1)
 
     # Team A lost
     if outcome == LOSS:
-        team_b_goals = get_victor_goals(team_b, winner_goals_indicator)
-        team_a_goals = get_loser_goals(team_a, team_b_goals, loser_goals_indicator)
+        team_b_goals = get_victor_goals(team_b, winner_goals_indicator, teams)
+        team_a_goals = get_loser_goals(team_a, team_b_goals, loser_goals_indicator, teams)
         return [team_a_goals, team_b_goals]
     # Draw
     elif outcome == DRAW:
@@ -74,14 +74,14 @@ def get_match_score(team_a, team_b, outcome):
             return [2, 2]
     # Team A won
     else:
-        team_a_goals = get_victor_goals(team_a, winner_goals_indicator)
-        team_b_goals = get_loser_goals(team_b, team_a_goals, loser_goals_indicator)
+        team_a_goals = get_victor_goals(team_a, winner_goals_indicator, teams)
+        team_b_goals = get_loser_goals(team_b, team_a_goals, loser_goals_indicator, teams)
         return [team_a_goals, team_b_goals]
 
 def poisson_mass(mu, n):
     return (mu ** n) * (math.e ** (-mu))/(math.factorial(n))
 
-def get_match_outcome(team_a, team_b):
+def get_match_outcome(team_a, team_b, teams):
     a_elo = teams[team_a][ELO]
     b_elo = teams[team_b][ELO]
     pr_a_loss, pr_a_draw = get_outcome_probabilities(a_elo, b_elo)
@@ -98,7 +98,7 @@ def get_updated_elo(prev, exp, outcome):
     new_rating = prev + (WORLD_CUP_CONSTANT * (outcome - exp))
     return new_rating
 
-def update_standings(team_a, team_b, a_goals, b_goals, outcome, expectation):
+def update_standings(team_a, team_b, a_goals, b_goals, outcome, expectation, teams):
     teams[team_a][GF] += a_goals
     teams[team_a][GA] += b_goals
     teams[team_b][GF] += b_goals
@@ -118,20 +118,23 @@ def update_standings(team_a, team_b, a_goals, b_goals, outcome, expectation):
     else:
         teams[team_b][PTS] += 3
 
-def sim_match(team_a, team_b):
-    outcome = get_match_outcome(team_a, team_b)
+    return teams
+
+def sim_match(team_a, team_b, teams):
+    outcome = get_match_outcome(team_a, team_b, teams)
     exp = get_match_expectation(teams[team_a][ELO], teams[team_b][ELO])
-    score = get_match_score(team_a, team_b, outcome)
-    update_standings(team_a, team_b, score[0], score[1], outcome, exp)
-    return score
+    score = get_match_score(team_a, team_b, outcome, teams)
+    teams = update_standings(team_a, team_b, score[0], score[1], outcome, exp, teams)
+    return teams
 
 def run_sim():
-    print("hello")
-    pass
+    standings = init()
+    for match in matches:
+        team_a = match["home"]
+        team_b = match["away"]
+        standings = sim_match(team_a, team_b, standings)
+    return standings
 
-for match in matches:
-    team_a = match["home"]
-    team_b = match["away"]
-    sim_match(team_a, team_b)
-
-print(teams)
+def run_sim_n_times(n):
+    for i in range(n):
+        run_sim()

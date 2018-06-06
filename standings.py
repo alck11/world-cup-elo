@@ -1,5 +1,7 @@
-teams = {
-    "URU": {"elo": 1891, "group": "A", "points": 0, "GF": 0, "GA": 0, "ATT": 1.7},
+
+
+def init():
+    return {"URU": {"elo": 1891, "group": "A", "points": 0, "GF": 0, "GA": 0, "ATT": 1.7},
     "RUS": {"elo": 1679, "group": "A", "points": 0, "GF": 0, "GA": 0, "ATT": 1.25},
     "EGY": {"elo": 1643, "group": "A", "points": 0, "GF": 0, "GA": 0, "ATT": 1.2},
     "KSA": {"elo": 1597, "group": "A", "points": 0, "GF": 0, "GA": 0, "ATT": 1.1},
