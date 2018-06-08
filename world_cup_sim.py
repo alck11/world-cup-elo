@@ -1,5 +1,6 @@
 
 import random, math
+from Match import *
 from standings import init
 from constants import *
 from outcomes import *
@@ -8,12 +9,9 @@ from matches import matches
 def get_random_float_between(lower_bound, upper_bound):
     return random.uniform(lower_bound, upper_bound)
 
-def get_match_expectation(rating_a, rating_b):
-    exponent = (rating_b - rating_a)/400.0
-    return 1/(1 + (10**exponent))
-
 def get_outcome_probabilities(a_elo, b_elo):
-    exp = get_match_expectation(a_elo, b_elo)
+    match = Match(a_elo, b_elo)
+    exp = match.get_expectation()
     k = 4.0/3.0
     pr_draw = (k * exp) * (1 - exp)
     pr_a_win = exp - (0.5 * pr_draw)
@@ -103,7 +101,8 @@ def sim_match(a_name, b_name, teams):
     a_elo = a_team[ELO]
     b_elo = b_team[ELO]
     outcome = get_match_outcome(a_elo, b_elo)
-    exp = get_match_expectation(a_elo, b_elo)
+    match = Match(a_elo, b_elo)
+    exp = match.get_expectation()
     a_goals, b_goals = get_match_score(outcome)
     match_data = {"a": {"name": a_name, "scored": a_goals, "elo": a_elo, "index": a_index},
                 "b": {"name": b_name, "scored": b_goals, "elo": b_elo, "index": b_index},
@@ -141,7 +140,8 @@ def get_top_two_from(curr_standings, group_name):
     return top_two
 
 def get_knockout_match_winner(team_a, team_b):
-    exp = get_match_expectation(team_a[ELO], team_b[ELO])
+    match = Match(team_a[ELO], team_b[ELO])
+    exp = match.get_expectation()
     outcome_float = get_random_float_between(0, 1)
     winner = team_a if (outcome_float < exp) else team_b
     return winner
@@ -252,5 +252,7 @@ def run_sim_n_times(n):
         master_dict = sim_knockout_round(curr_standings, master_dict)
 
     pretty_print(master_dict)
+
+#m = Match(100, 200)
 
 run_sim_n_times(10000)
