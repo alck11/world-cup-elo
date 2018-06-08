@@ -3,35 +3,7 @@ import random, math
 from Match import *
 from standings import init
 from constants import *
-from outcomes import *
 from matches import matches
-
-def get_random_float_between(lower_bound, upper_bound):
-    return random.uniform(lower_bound, upper_bound)
-
-def get_outcome_probabilities(a_elo, b_elo):
-    match = Match(a_elo, b_elo)
-    exp = match.get_expectation()
-    k = 4.0/3.0
-    pr_draw = (k * exp) * (1 - exp)
-    pr_a_win = exp - (0.5 * pr_draw)
-    pr_a_loss = 1 - pr_draw - pr_a_win
-    return pr_a_loss, pr_draw
-
-def get_match_score(result):
-    result_key = str(result)
-    possible_scores = OUTCOMES[result_key]
-    return random.choice(possible_scores)
-
-def get_match_outcome(a_elo, b_elo):
-    pr_a_loss, pr_a_draw = get_outcome_probabilities(a_elo, b_elo)
-    outcome_float = get_random_float_between(0, 1)
-    if outcome_float < pr_a_loss:
-        return LOSS
-    elif outcome_float < pr_a_loss + pr_a_draw:
-        return DRAW
-    else:
-        return WIN
 
 def get_updated_elo(prev, exp, outcome):
     WORLD_CUP_CONSTANT = 60
@@ -100,10 +72,10 @@ def sim_match(a_name, b_name, teams):
 
     a_elo = a_team[ELO]
     b_elo = b_team[ELO]
-    outcome = get_match_outcome(a_elo, b_elo)
     match = Match(a_elo, b_elo)
+    outcome = match.get_outcome()
     exp = match.get_expectation()
-    a_goals, b_goals = get_match_score(outcome)
+    a_goals, b_goals = match.get_score()
     match_data = {"a": {"name": a_name, "scored": a_goals, "elo": a_elo, "index": a_index},
                 "b": {"name": b_name, "scored": b_goals, "elo": b_elo, "index": b_index},
                 "exp": exp,
@@ -138,6 +110,9 @@ def get_top_two_from(curr_standings, group_name):
     sorted_group = sorted(group, key=lambda k: k["points"], reverse=True)
     top_two = sorted_group[0:2]
     return top_two
+
+def get_random_float_between(lower_bound, upper_bound):
+    return random.uniform(lower_bound, upper_bound)
 
 def get_knockout_match_winner(team_a, team_b):
     match = Match(team_a[ELO], team_b[ELO])
